@@ -1,0 +1,255 @@
+{
+  "name": "Pre-entrega1",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f762ff87-4e39-441c-bd71-49ce456956e4",
+      "name": "Chat de soporte",
+      "webhookId": "7c44554c-4bf5-4bf1-8def-22646274df97"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "## ROL Y ÁMBITO\nEres un asistente experto de soporte técnico y triaje de un sistema de atención al cliente. Tu objetivo es analizar el correo electrónico entrante de un usuario, clasificarlo dentro de uno de los subsistemas disponibles y redactar un borrador de respuesta útil y profesional basándote estrictamente en la base de conocimiento provista.\n\n## OBJETIVO OPERATIVO\nResolver cada consulta con la información oficial de la base de conocimiento, o derivarla correctamente a un humano, dejando un registro trazable de lo que hiciste.\n\n## REGLAS DE USO DE HERRAMIENTAS\n1. Usa siempre la \"base_de_conocimiento\" para contestar.\n2. Analiza los subsistemas y definiciones técnicas provistas en la base de conocimiento adjunta.\n3. Determina a qué subsistema pertenece el problema.\n4. Evalúa tu nivel de confianza en la clasificación:\n   - \"alta\": Si el problema encaja claramente en un subsistema.\n   - \"baja\": Si el mensaje es ambiguo, confuso, demasiado general o podría pertenecer a múltiples áreas.\n5. Redacta un borrador de respuesta empático y resolutivo para el cliente en una sola línea (sin saltos de línea), aplicando la solución frecuente correspondiente al subsistema identificado.\n\n## PROTOCOLO DE ESCALAMIENTO\nDetén el ciclo y usa \"escalar_a_humano\" de inmediato si detectas: que tu \"nivel_confianza\" es \"baja\", si el tono del chat es agresivo, o si no puedes determinar a qué subsistema pertenece.\nDespués de escalar, responde al cliente con un mensaje breve que termine exactamente con la frase: \"Caso derivado a un especialista.\"",
+          "maxIterations": 6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        160,
+        16
+      ],
+      "id": "13c19b83-3d1b-4cfc-9058-78e536c2601f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        32,
+        224
+      ],
+      "id": "08ff6102-af3c-4e85-a719-95a2bc2df5a2",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "FMLbbqLNsfrCROSL",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        176,
+        224
+      ],
+      "id": "1d4368b6-46ac-46c3-96f0-3aacc754edde",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Base de conociento de atencion al cliente.\n\nUSA ESTA HERRAMIENTA SIEMPRE antes de responder.\n\nEl parametro 'subsistema' es OBLIGATORIO. y tiene que ser uno de los siguiente: Autenticacion y Accesos, Facturacion y Cobros, Portal de Usuario (UI/UX), Integraciones y APIs, Soporte General y Onboarding.\n\nGuia para elegirlo: consulta la columna 'EjemplosDeFallos' dentro de la base de conocimiento",
+        "documentId": {
+          "__rl": true,
+          "value": "13SLxsDMdUnBnO7Zi2lYKhYIFPlTEew5b8AZnIBEmqaM",
+          "mode": "list",
+          "cachedResultName": "Subsistemas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13SLxsDMdUnBnO7Zi2lYKhYIFPlTEew5b8AZnIBEmqaM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1548445561,
+          "mode": "list",
+          "cachedResultName": "Subsistemas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13SLxsDMdUnBnO7Zi2lYKhYIFPlTEew5b8AZnIBEmqaM/edit#gid=1548445561"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Subsistema",
+              "lookupValue": "={{ $fromAI('subsistema', 'OBLIGATORIO. Autenticacion y Accesos, Facturacion y Cobros, Portal de Usuario (UI/UX), Integraciones y APIs, Soporte General y Onboarding.', 'string', 'sin_subsistema') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        224
+      ],
+      "id": "1eacf88f-41f3-457a-a76b-47fcf7fb297b",
+      "name": "subsistemas",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CvFCA1A6tWK4SxwV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C68PU6H9B",
+          "mode": "list",
+          "cachedResultName": "log"
+        },
+        "text": "=[LOG] - soporte tecnico - {{ $json.output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        16
+      ],
+      "id": "945c0193-8ba3-4e86-a51a-b8997dfebef9",
+      "name": "log_observabilidad",
+      "webhookId": "0ed9bfc2-6d67-42f5-a9b2-231d20d4d418",
+      "credentials": {
+        "slackApi": {
+          "id": "6vVlAjtbWNdTtP4z",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e8c9a9a-4659-40cf-bf8f-6aecf86f55a0",
+              "name": "output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "01d9c911-9968-4ce3-afb7-2b15f9fa6368",
+              "name": "output",
+              "value": "={{ $('AI Agent').item.json.output.parseJson().respuesta_sugerida.borrador }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        752,
+        16
+      ],
+      "id": "9b4941f4-6e85-4661-803f-855d9b55e172",
+      "name": "Respuesta_chat"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat de soporte": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "log_observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "subsistemas": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "log_observabilidad": {
+      "main": [
+        [
+          {
+            "node": "Respuesta_chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1ff221bf-5761-4c33-b789-562156791ab2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa3c2577e981b2de3ae9359be8d597e6eed548380992b3360d21a60b666ddc95"
+  },
+  "nodeGroups": [],
+  "id": "LE26itx9NwapaOB4",
+  "tags": []
+}
